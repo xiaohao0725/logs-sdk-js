@@ -18,6 +18,7 @@
 
 export { LogSDK, newLogUUID } from './client';
 export { RingBuffer } from './buffer';
+export { OfflineCache } from './offline';
 export { retryWithBackoff } from './retry';
 export type {
   LogSDKConfig,

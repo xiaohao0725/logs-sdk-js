@@ -2,6 +2,7 @@
 import * as os from 'os';
 import { v7 as uuidv7 } from 'uuid';
 import { RingBuffer } from './buffer';
+import { OfflineCache } from './offline';
 import { retryWithBackoff } from './retry';
 import type { LogEntry, LogSDKConfig, ResolvedConfig } from './types';
 
@@ -12,11 +13,13 @@ export class LogSDK {
   private buffer: RingBuffer;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private closed = false;
+  private offlineCache: OfflineCache;
   private hostname: string;
   private pid: string;
 
   constructor(config: LogSDKConfig) {
     this.config = resolveConfig(config);
+    this.offlineCache = new OfflineCache();
     this.hostname = os.hostname();
     this.pid = String(process.pid);
 
@@ -67,9 +70,12 @@ export class LogSDK {
       try {
         await this.sendBatch(remaining);
       } catch (err) {
-        console.error(`[logs-sdk] 关闭时上报失败 (数量=${remaining.length}):`, err);
+        console.error(`[logs-sdk] 关闭时上报失败:`, err, '— 保存到离线缓存');
+        this.offlineCache.save(remaining);
       }
     }
+    // 尝试重传离线缓存
+    await this.flushOffline();
   }
 
   /** 获取 Express 中间件（动态导入，避免不安装 express 时出错） */
@@ -95,8 +101,17 @@ export class LogSDK {
         maxRetries: this.config.maxRetries,
       });
     } catch (err) {
-      console.error(`[logs-sdk] 上报失败 (数量=${entries.length}，已重试):`, err);
+      console.error(`[logs-sdk] 上报失败 (数量=${entries.length}):`, err, '— 保存到离线缓存');
+      this.offlineCache.save(entries);
     }
+  }
+
+  /** 重传离线缓存的日志 */
+  async flushOffline(): Promise<void> {
+    if (this.offlineCache.pendingCount() === 0) return;
+    console.log(`[logs-sdk] 检测到 ${this.offlineCache.pendingCount()} 个离线缓存文件，开始重传...`);
+    await this.offlineCache.flushAll((entries) => this.sendBatch(entries));
+    console.log('[logs-sdk] 离线缓存重传完成');
   }
 
   /** HTTP POST 批量发送日志 */
