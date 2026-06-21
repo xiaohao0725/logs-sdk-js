@@ -17,7 +17,8 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: npm version --no-git-tag-version ${GITHUB_REF#refs/tags/}
+      - name: Sync version from tag
+        run: npm version --no-git-tag-version ${GITHUB_REF#refs/tags/v}
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
