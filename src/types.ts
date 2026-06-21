@@ -97,6 +97,16 @@ export interface LogEntry {
   process_id: string;
 
   // ── 自定义扩展 ──
+  // ── TLS/协议 ──
+  tls_version?: string;
+  tls_cipher?: string;
+  proto?: string;
+  api_version?: string;
+  referer?: string;
+  upstream_status?: number;
+  latency_breakdown?: string;
+  request_id?: string;
+  // ── 自定义扩展 ──
   tags?: Record<string, unknown>;
 }
 

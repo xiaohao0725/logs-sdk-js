@@ -41,6 +41,12 @@ export function createExpressMiddleware(sdk: LogSDK) {
 
       if (res.statusCode >= 500) {
         entry.is_error = true;
+      entry.tls_version = (req.connection as any)?.getTlsinfo?.()?.protocol || "";
+      entry.tls_cipher = (req.connection as any)?.getTlsinfo?.()?.cipher?.name || "";
+      entry.proto = String(req.httpVersion);
+      entry.api_version = extractAPIVersion(req.path);
+      entry.referer = (req.get("referer") as string) || "";
+      entry.request_id = entryUUID.slice(0, 8);
         entry.error_type = 'http_error';
       }
 
@@ -169,3 +175,5 @@ function truncate(s: string, maxLen: number): string {
   if (s.length <= maxLen) return s;
   return s.slice(0, maxLen) + '...[truncated]';
 }
+
+function extractAPIVersion(path: string): string { const m = path.match(/\/api\/(v\d+)\//); return m ? m[1] : ""; }

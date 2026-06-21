@@ -33,6 +33,12 @@ export function createKoaMiddleware(sdk: LogSDK) {
       const durationMs = Number(process.hrtime.bigint() - startHrTime) / 1_000_000;
       const entry = buildKoaEntry(ctx, entryUUID, startTime, durationMs, reqBody, respBody, config, sdk.host);
 
+      entry.tls_version = (ctx.req.connection as any)?.getTlsinfo?.()?.protocol || "";
+      entry.tls_cipher = (ctx.req.connection as any)?.getTlsinfo?.()?.cipher?.name || "";
+      entry.proto = String(ctx.req.httpVersion);
+      entry.api_version = extractKoaVersion(ctx.path);
+      entry.referer = (ctx.get("referer") as string) || "";
+      entry.request_id = entryUUID.slice(0, 8);
       if (ctx.status >= 500) {
         entry.is_error = true;
         entry.error_type = 'http_error';
@@ -97,7 +103,6 @@ function buildKoaEntry(
     service_name: config.serviceName || '',
     host,
     process_id: String(process.pid),
-    tags: {},
   };
 }
 
@@ -154,3 +159,5 @@ function truncate(s: string, maxLen: number): string {
   if (s.length <= maxLen) return s;
   return s.slice(0, maxLen) + '...[truncated]';
 }
+
+function extractKoaVersion(path: string): string { const m = path.match(/\/api\/(v\d+)\//); return m ? m[1] : ""; }
