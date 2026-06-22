@@ -27,3 +27,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SDK_HASH: ${{ github.sha }}
+
+      - name: Notify logs-server
+        run: |
+          curl -s -X POST https://api.logs.codexs.cn/api/v1/sdk/webhook \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -d "{\"sdk_type\":\"js\",\"sdk_version\":\"${GITHUB_REF#refs/tags/}\",\"sdk_hash\":\"${{ github.sha }}\"}"
