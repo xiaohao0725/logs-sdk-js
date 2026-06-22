@@ -8,7 +8,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write  # Required for npm trusted publishing
+      id-token: write
+      contents: write  # Required for gh release create
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +28,15 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SDK_HASH: ${{ github.sha }}
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "${GITHUB_REF#refs/tags/}" \
+            --title "${GITHUB_REF#refs/tags/}" \
+            --generate-notes \
+            --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Notify logs-server
         run: |
