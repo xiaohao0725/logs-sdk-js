@@ -7,6 +7,7 @@ import { retryWithBackoff } from './retry';
 import type { LogEntry, LogSDKConfig, ResolvedConfig } from './types';
 
 const VERSION = '0.1.0';
+import { SDK_HASH } from './hash';
 
 export class LogSDK {
   private config: ResolvedConfig;
@@ -130,6 +131,7 @@ export class LogSDK {
           'X-API-Secret': this.config.apiSecret,
           'X-SDK-Version': VERSION,
           'X-SDK-Type': 'node',
+          'X-SDK-Hash': SDK_HASH,
           'User-Agent': `logs-sdk-js/${VERSION}`,
         },
         body,
