@@ -1,5 +1,5 @@
 // 日志管理平台 Node.js SDK 入口
-// 提供 Express/Koa 中间件，一行代码接入日志采集
+// 提供 Express/Koa/Fastify 中间件，一行代码接入日志采集
 //
 // 使用方法：
 //
@@ -13,8 +13,9 @@
 //     environment: 'production',
 //   });
 //
-//   app.use(logger.expressMiddleware());  // Express
-//   app.use(logger.koaMiddleware());      // Koa
+//   app.use(logger.expressMiddleware());       // Express
+//   app.use(logger.koaMiddleware());           // Koa
+//   app.register(logger.fastifyPlugin());      // Fastify
 
 export { LogSDK, newLogUUID } from './client';
 export { RingBuffer } from './buffer';

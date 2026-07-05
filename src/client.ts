@@ -93,6 +93,13 @@ export class LogSDK {
     return createKoaMiddleware(this);
   }
 
+  /** 获取 Fastify 插件 */
+  fastifyPlugin() {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createFastifyPlugin } = require('./middleware/fastify');
+    return createFastifyPlugin(this);
+  }
+
   // ──────────────── 内部方法 ────────────────
 
   /** 异步发送一批日志（包装重试） */
