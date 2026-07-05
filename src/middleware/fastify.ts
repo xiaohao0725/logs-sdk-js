@@ -18,6 +18,7 @@ export function createFastifyPlugin(sdk: LogSDK) {
   ) {
     // 记录请求开始时间
     fastify.decorateRequest('_logsStartTime', 0);
+    fastify.decorateRequest('_logsStartHrTime', 0);
     fastify.decorateRequest('_logsUUID', '');
 
     fastify.addHook('onRequest', async (request) => {
