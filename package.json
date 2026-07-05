@@ -1,6 +1,6 @@
 {
   "name": "@xiaohao0725/logs-sdk",
-  "version": "0.4.0",
+  "version": "0.3.0",
   "description": "日志管理平台 Node.js SDK，提供 Express/Koa/Fastify 中间件，自动采集 HTTP 请求日志并上报",
   "publishConfig": {
     "access": "public",
