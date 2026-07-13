@@ -44,19 +44,39 @@ export function createFastifyPlugin(sdk: LogSDK) {
         reqBody, respBody, config, sdk.host
       );
 
+      entry.tls_version = (request.raw.socket as any)?.getProtocol?.() || '';
+      entry.tls_cipher = (request.raw.socket as any)?.getCipher?.()?.name || '';
+      entry.proto = request.raw.httpVersion;
+      entry.api_version = extractFastifyVersion(request.routeOptions?.url || request.url);
+      entry.referer = (request.headers.referer as string) || '';
+      entry.request_id = entryUUID.slice(0, 8);
+
       if (reply.statusCode >= 500) {
         entry.is_error = true;
-        entry.tls_version = (request.raw.socket as any)?.getProtocol?.() || '';
-        entry.tls_cipher = (request.raw.socket as any)?.getCipher?.()?.name || '';
-        entry.proto = request.raw.httpVersion;
-        entry.api_version = extractFastifyVersion(request.routeOptions?.url || request.url);
-        entry.referer = (request.headers.referer as string) || '';
-        entry.request_id = entryUUID.slice(0, 8);
         entry.error_type = 'http_error';
       }
 
       sdk.send(entry);
       return payload;
+    });
+
+    // 捕获未处理的异常
+    fastify.addHook('onError', async (request, _reply, error) => {
+      const startTime = (request as any)._logsStartTime as number;
+      const startHrTime = (request as any)._logsStartHrTime as bigint;
+      const entryUUID = (request as any)._logsUUID as string;
+      if (!startTime) return;
+
+      const durationMs = Number(process.hrtime.bigint() - startHrTime) / 1_000_000;
+      const entry = buildFastifyEntry(
+        request, _reply, entryUUID, startTime, durationMs,
+        '', '', config, sdk.host
+      );
+      entry.is_error = true;
+      entry.error_type = 'panic';
+      entry.error_message = error?.message || String(error);
+      entry.error_stack = error?.stack || '';
+      sdk.send(entry);
     });
 
     done();

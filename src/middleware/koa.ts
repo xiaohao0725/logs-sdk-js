@@ -48,7 +48,23 @@ export function createKoaMiddleware(sdk: LogSDK) {
       return origEnd.call(ctx.res, chunk, encoding, callback);
     }) as any;
 
-    await next();
+    try {
+      await next();
+    } catch (err: any) {
+      const entry = buildKoaEntry(ctx, entryUUID, startTime, 0, '', '', config, sdk.host);
+      entry.is_error = true;
+      entry.error_type = 'panic';
+      entry.error_message = err?.message || String(err);
+      entry.error_stack = err?.stack || '';
+      entry.tls_version = (ctx.req.connection as any)?.getTlsinfo?.()?.protocol || "";
+      entry.tls_cipher = (ctx.req.connection as any)?.getTlsinfo?.()?.cipher?.name || "";
+      entry.proto = String(ctx.req.httpVersion);
+      entry.api_version = extractKoaVersion(ctx.path);
+      entry.referer = (ctx.get("referer") as string) || "";
+      entry.request_id = entryUUID.slice(0, 8);
+      sdk.send(entry);
+      throw err;
+    }
   };
 }
 

@@ -39,14 +39,15 @@ export function createExpressMiddleware(sdk: LogSDK) {
       const durationMs = Number(process.hrtime.bigint() - startHrTime) / 1_000_000;
       const entry = buildExpressEntry(req, res, entryUUID, startTime, durationMs, reqBody, respBody, config, sdk.host);
 
-      if (res.statusCode >= 500) {
-        entry.is_error = true;
       entry.tls_version = (req.connection as any)?.getTlsinfo?.()?.protocol || "";
       entry.tls_cipher = (req.connection as any)?.getTlsinfo?.()?.cipher?.name || "";
       entry.proto = String(req.httpVersion);
       entry.api_version = extractAPIVersion(req.path);
       entry.referer = (req.get("referer") as string) || "";
       entry.request_id = entryUUID.slice(0, 8);
+
+      if (res.statusCode >= 500) {
+        entry.is_error = true;
         entry.error_type = 'http_error';
       }
 
@@ -54,7 +55,17 @@ export function createExpressMiddleware(sdk: LogSDK) {
       return origEnd.call(res, chunk, encoding, callback);
     }) as any;
 
-    next();
+    try {
+      next();
+    } catch (err: any) {
+      const entry = buildExpressEntry(req, res, entryUUID, startTime, 0, reqBody, '', config, sdk.host);
+      entry.is_error = true;
+      entry.error_type = 'panic';
+      entry.error_message = err?.message || String(err);
+      entry.error_stack = err?.stack || '';
+      sdk.send(entry);
+      throw err;
+    }
   };
 }
 
