@@ -112,3 +112,20 @@ export interface LogEntry {
 
 /** 内部配置（已合并默认值） */
 export interface ResolvedConfig extends Required<LogSDKConfig> {}
+
+/** Infrastructure log entry */
+export interface InfraLogEntry {
+  uuid?: string;
+  timestamp?: string;
+  project_slug?: string;
+  source_type: string;
+  source_name: string;
+  host?: string;
+  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+  message: string;
+  metadata?: string;
+  trace_id?: string;
+  related_api_uuid?: string;
+  is_error?: boolean;
+  error_detail?: string;
+}

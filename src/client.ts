@@ -4,7 +4,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { RingBuffer } from './buffer';
 import { OfflineCache } from './offline';
 import { retryWithBackoff } from './retry';
-import type { LogEntry, LogSDKConfig, ResolvedConfig } from './types';
+import type { LogEntry, InfraLogEntry, LogSDKConfig, ResolvedConfig } from './types';
 
 const VERSION = '0.1.0';
 import { SDK_HASH } from './hash';
@@ -158,6 +158,30 @@ export class LogSDK {
     return this.config;
   }
 
+
+  async uploadInfraLogs(entries: InfraLogEntry[]): Promise<void> {
+    if (entries.length === 0) return;
+    const infraEndpoint = this.config.endpoint.replace('/logs', '/infra-logs');
+    for (const e of entries) {
+      if (!e.project_slug) e.project_slug = this.config.projectSlug;
+      if (!e.host) e.host = this.host;
+      if (!e.timestamp) e.timestamp = new Date().toISOString();
+    }
+    const body = JSON.stringify({ logs: entries });
+    const resp = await fetch(infraEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': this.config.apiKey, 'X-API-Secret': this.config.apiSecret, 'X-SDK-Type': 'js', 'X-SDK-Version': '0.3.0' },
+      body,
+      signal: AbortSignal.timeout(15000),
+    });
+    if (resp.status !== 200 && resp.status !== 201) {
+      throw new Error('Server returned ' + resp.status);
+    }
+  }
+
+  async uploadInfraLog(entry: InfraLogEntry): Promise<void> {
+    return this.uploadInfraLogs([entry]);
+  }
   get host(): string {
     return this.hostname;
   }
