@@ -50,6 +50,7 @@ export function createExpressMiddleware(sdk: LogSDK) {
         entry.is_error = true;
         entry.error_type = 'http_error';
         entry.error_message = entry.response_body;
+        if (res.statusCode >= 500) entry.error_stack = new Error().stack || '';
       }
 
       sdk.send(entry);
