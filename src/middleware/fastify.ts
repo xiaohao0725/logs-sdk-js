@@ -51,9 +51,10 @@ export function createFastifyPlugin(sdk: LogSDK) {
       entry.referer = (request.headers.referer as string) || '';
       entry.request_id = entryUUID.slice(0, 8);
 
-      if (reply.statusCode >= 500) {
+      if (reply.statusCode >= 400) {
         entry.is_error = true;
         entry.error_type = 'http_error';
+        entry.error_message = entry.response_body;
       }
 
       sdk.send(entry);

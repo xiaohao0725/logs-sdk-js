@@ -39,9 +39,10 @@ export function createKoaMiddleware(sdk: LogSDK) {
       entry.api_version = extractKoaVersion(ctx.path);
       entry.referer = (ctx.get("referer") as string) || "";
       entry.request_id = entryUUID.slice(0, 8);
-      if (ctx.status >= 500) {
+      if (ctx.status >= 400) {
         entry.is_error = true;
         entry.error_type = 'http_error';
+        entry.error_message = entry.response_body;
       }
 
       sdk.send(entry);

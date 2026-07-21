@@ -46,9 +46,10 @@ export function createExpressMiddleware(sdk: LogSDK) {
       entry.referer = (req.get("referer") as string) || "";
       entry.request_id = entryUUID.slice(0, 8);
 
-      if (res.statusCode >= 500) {
+      if (res.statusCode >= 400) {
         entry.is_error = true;
         entry.error_type = 'http_error';
+        entry.error_message = entry.response_body;
       }
 
       sdk.send(entry);
