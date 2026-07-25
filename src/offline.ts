@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { LogEntry } from './types';
+import type { LogEntry, IngestResponse } from './types';
 
 export class OfflineCache {
   private dir: string;
@@ -34,7 +34,7 @@ export class OfflineCache {
   }
 
   /** 读取所有离线缓存，通过回调发送，成功则删除 */
-  async flushAll(sendFn: (entries: LogEntry[]) => Promise<void>): Promise<void> {
+  async flushAll(sendFn: (entries: LogEntry[]) => Promise<IngestResponse>): Promise<void> {
     let files: string[] = [];
     try {
       files = fs.readdirSync(this.dir)

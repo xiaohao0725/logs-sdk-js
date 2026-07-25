@@ -4,7 +4,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { RingBuffer } from './buffer';
 import { OfflineCache } from './offline';
 import { retryWithBackoff } from './retry';
-import type { LogEntry, InfraLogEntry, LogSDKConfig, ResolvedConfig } from './types';
+import type { LogEntry, InfraLogEntry, LogSDKConfig, ResolvedConfig, IngestResponse } from './types';
 
 const VERSION = '0.1.0';
 import { SDK_HASH } from './hash';
@@ -122,8 +122,8 @@ export class LogSDK {
     console.log('[logs-sdk] 离线缓存重传完成');
   }
 
-  /** HTTP POST 批量发送日志 */
-  private async sendBatch(entries: LogEntry[]): Promise<void> {
+  /** HTTP POST 批量发送日志 — ★ 增强：解析响应体返回 IngestResponse */
+  private async sendBatch(entries: LogEntry[]): Promise<IngestResponse> {
     const body = JSON.stringify({ logs: entries });
 
     const controller = new AbortController();
@@ -145,9 +145,23 @@ export class LogSDK {
         signal: controller.signal,
       });
 
-      if (resp.status !== 200 && resp.status !== 201) {
-        throw new Error(`服务端返回异常状态码: ${resp.status}`);
+      // ★ 解析服务端 JSON 响应体
+      let apiResp: { code: number; message: string; data: IngestResponse };
+      try {
+        apiResp = await resp.json();
+      } catch {
+        // 响应体无法解析（旧版服务端），回退到状态码检查
+        if (resp.status !== 200 && resp.status !== 201) {
+          throw new Error(`服务端返回异常状态码: ${resp.status}`);
+        }
+        return { received: entries.length, uuids: [], batch_id: '' };
       }
+
+      if (resp.status !== 200 && resp.status !== 201) {
+        throw new Error(`服务端返回异常: ${apiResp.message}`);
+      }
+
+      return apiResp.data;
     } finally {
       clearTimeout(timeout);
     }

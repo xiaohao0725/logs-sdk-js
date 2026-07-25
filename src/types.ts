@@ -113,6 +113,27 @@ export interface LogEntry {
 /** 内部配置（已合并默认值） */
 export interface ResolvedConfig extends Required<LogSDKConfig> {}
 
+/** 服务端日志上报同步响应 */
+export interface IngestResponse {
+  received: number;
+  uuids: string[];
+  batch_id: string;
+}
+
+/** 单条日志处理结果（由 Webhook 回调推送） */
+export interface CallbackItem {
+  uuid: string;
+  uid: number;
+  status: string;  // persisted / deduplicated / invalid
+}
+
+/** 日志持久化完成事件 */
+export interface LogPersistedEvent {
+  batch_id: string;
+  total: number;
+  items: CallbackItem[];
+}
+
 /** Infrastructure log entry */
 export interface InfraLogEntry {
   uuid?: string;
