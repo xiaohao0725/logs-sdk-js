@@ -148,7 +148,7 @@ export class LogSDK {
       // ★ 解析服务端 JSON 响应体
       let apiResp: { code: number; message: string; data: IngestResponse };
       try {
-        apiResp = await resp.json();
+        apiResp = await resp.json() as typeof apiResp;
       } catch {
         // 响应体无法解析（旧版服务端），回退到状态码检查
         if (resp.status !== 200 && resp.status !== 201) {
