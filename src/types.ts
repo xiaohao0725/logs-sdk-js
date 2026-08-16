@@ -81,6 +81,8 @@ export interface LogEntry {
   error_type: ErrorType | '';
   error_stack: string;
   panic_location?: string;
+  /** 该请求是否由平台回调通知触发（X-Logs-Event 头或 logs-server-callback/ UA） */
+  is_callback?: boolean;
 
   // ── 关联与追踪 ──
   trace_id: string;

@@ -39,6 +39,7 @@ export function createKoaMiddleware(sdk: LogSDK) {
       entry.api_version = extractKoaVersion(ctx.path);
       entry.referer = (ctx.get("referer") as string) || "";
       entry.request_id = entryUUID.slice(0, 8);
+      entry.is_callback = isCallbackRequest(ctx);
       if (ctx.status >= 400) {
         entry.is_error = true;
         entry.error_type = 'http_error';
@@ -64,10 +65,16 @@ export function createKoaMiddleware(sdk: LogSDK) {
       entry.api_version = extractKoaVersion(ctx.path);
       entry.referer = (ctx.get("referer") as string) || "";
       entry.request_id = entryUUID.slice(0, 8);
+      entry.is_callback = isCallbackRequest(ctx);
       sdk.send(entry);
       throw err;
     }
   };
+}
+
+/** 判断请求是否由平台回调通知触发（X-Logs-Event 头或 logs-server-callback/ UA） */
+function isCallbackRequest(ctx: Context): boolean {
+  return Boolean(ctx.get('x-logs-event')) || (ctx.get('user-agent') || '').startsWith('logs-server-callback/');
 }
 
 function buildKoaEntry(

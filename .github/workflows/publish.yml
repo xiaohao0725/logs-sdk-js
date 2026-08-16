@@ -23,7 +23,7 @@ jobs:
         run: echo "export const SDK_HASH = '${{ github.sha }}';" > src/hash.ts
       - run: npm run build
       - name: Sync version from tag
-        run: npm version --no-git-tag-version ${GITHUB_REF#refs/tags/v}
+        run: npm version --no-git-tag-version --allow-same-version ${GITHUB_REF#refs/tags/v}
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -33,7 +33,7 @@ jobs:
         run: |
           gh release create "${GITHUB_REF#refs/tags/}" \
             --title "${GITHUB_REF#refs/tags/}" \
-            --generate-notes \
+            --notes-file CHANGELOG.md \
             --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ github.token }}

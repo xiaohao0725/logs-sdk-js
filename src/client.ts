@@ -6,7 +6,7 @@ import { OfflineCache } from './offline';
 import { retryWithBackoff } from './retry';
 import type { LogEntry, InfraLogEntry, LogSDKConfig, ResolvedConfig, IngestResponse } from './types';
 
-const VERSION = '0.1.0';
+const VERSION = '0.6.0';
 import { SDK_HASH } from './hash';
 
 export class LogSDK {
@@ -178,13 +178,14 @@ export class LogSDK {
     const infraEndpoint = this.config.endpoint.replace('/logs', '/infra-logs');
     for (const e of entries) {
       if (!e.project_slug) e.project_slug = this.config.projectSlug;
+      if (!e.uuid) e.uuid = newLogUUID();
       if (!e.host) e.host = this.host;
       if (!e.timestamp) e.timestamp = new Date().toISOString();
     }
     const body = JSON.stringify({ logs: entries });
     const resp = await fetch(infraEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': this.config.apiKey, 'X-API-Secret': this.config.apiSecret, 'X-SDK-Type': 'js', 'X-SDK-Version': '0.3.0' },
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': this.config.apiKey, 'X-API-Secret': this.config.apiSecret, 'X-SDK-Type': 'js', 'X-SDK-Version': VERSION, 'X-SDK-Hash': SDK_HASH },
       body,
       signal: AbortSignal.timeout(15000),
     });
