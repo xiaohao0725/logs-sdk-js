@@ -50,6 +50,7 @@ export function createFastifyPlugin(sdk: LogSDK) {
       entry.api_version = extractFastifyVersion(request.routeOptions?.url || request.url);
       entry.referer = (request.headers.referer as string) || '';
       entry.request_id = entryUUID.slice(0, 8);
+      entry.is_callback = isCallbackRequest(request);
 
       if (reply.statusCode >= 400) {
         entry.is_error = true;
@@ -78,11 +79,18 @@ export function createFastifyPlugin(sdk: LogSDK) {
       entry.error_type = 'panic';
       entry.error_message = error?.message || String(error);
       entry.error_stack = error?.stack || '';
+      entry.is_callback = isCallbackRequest(request);
       sdk.send(entry);
     });
 
     done();
   };
+}
+
+/** 判断请求是否由平台回调通知触发（X-Logs-Event 头或 logs-server-callback/ UA） */
+function isCallbackRequest(request: FastifyRequest): boolean {
+  const headers = request.headers;
+  return Boolean(headers['x-logs-event']) || String(headers['user-agent'] || '').startsWith('logs-server-callback/');
 }
 
 /** 从 Fastify Request 构建 LogEntry */

@@ -45,6 +45,7 @@ export function createExpressMiddleware(sdk: LogSDK) {
       entry.api_version = extractAPIVersion(req.path);
       entry.referer = (req.get("referer") as string) || "";
       entry.request_id = entryUUID.slice(0, 8);
+      entry.is_callback = isCallbackRequest(req);
 
       if (res.statusCode >= 400) {
         entry.is_error = true;
@@ -65,10 +66,16 @@ export function createExpressMiddleware(sdk: LogSDK) {
       entry.error_type = 'panic';
       entry.error_message = err?.message || String(err);
       entry.error_stack = err?.stack || '';
+      entry.is_callback = isCallbackRequest(req);
       sdk.send(entry);
       throw err;
     }
   };
+}
+
+/** 判断请求是否由平台回调通知触发（X-Logs-Event 头或 logs-server-callback/ UA） */
+function isCallbackRequest(req: Request): boolean {
+  return Boolean(req.get('x-logs-event')) || (req.get('user-agent') || '').startsWith('logs-server-callback/');
 }
 
 /** 从 Express Request 构建 LogEntry */
